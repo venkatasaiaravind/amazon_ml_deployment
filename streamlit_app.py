@@ -1,4 +1,3 @@
-
 import streamlit as st
 import torch
 import torchvision.transforms as transforms
@@ -12,6 +11,7 @@ import warnings
 import os
 from pathlib import Path
 import json
+from huggingface_hub import hf_hub_download
 
 warnings.filterwarnings('ignore')
 
@@ -60,6 +60,89 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
+
+# =====================================================================
+# CREATE MODELS FOLDER
+# =====================================================================
+
+os.makedirs("models", exist_ok=True)
+
+# =====================================================================
+# DOWNLOAD MODELS FROM HUGGING FACE
+# =====================================================================
+
+@st.cache_resource
+def download_models():
+    """Download models from Hugging Face with progress tracking"""
+    try:
+        model_files = [
+            "fold_0_best_image_model.pth",
+            "fold_0_best_text_model.pth",
+            "fold_1_best_image_model.pth",
+            "fold_1_best_text_model.pth",
+            "fold_2_best_image_model.pth",
+            "fold_2_best_text_model.pth",
+            "fold_3_best_image_model.pth",
+            "fold_3_best_text_model.pth",
+            "fold_4_best_image_model.pth",
+            "fold_4_best_text_model.pth",
+            "meta_model_xgboost.pkl",
+            "meta_model_lightgbm.pkl",
+            "meta_model_neural_net.pkl",
+            "meta_model_gradient_boost.pkl",
+            "meta_model_adaboost.pkl",
+            "meta_model_ridge.pkl",
+            "ensemble_weights.pkl",
+            "scaler.pkl",
+        ]
+
+        # Count how many files exist
+        existing_files = sum(1 for f in model_files if os.path.exists(f"models/{f}"))
+
+        if existing_files == len(model_files):
+            # All files already exist
+            return True
+
+        # Show download progress
+        status_placeholder = st.empty()
+        progress_bar = st.progress(0)
+
+        for i, model_file in enumerate(model_files):
+            local_path = f"models/{model_file}"
+
+            # Skip if already exists
+            if os.path.exists(local_path):
+                progress_bar.progress((i + 1) / len(model_files))
+                continue
+
+            status_placeholder.text(f"📥 Downloading {model_file}... ({i+1}/{len(model_files)})")
+
+            try:
+                hf_hub_download(
+                    repo_id="aravind12345678/amazon_ml_models",
+                    filename=model_file,
+                    repo_type="dataset",
+                    local_dir="models",
+                    local_dir_use_symlinks=False
+                )
+            except Exception as e:
+                st.error(f"❌ Failed to download {model_file}: {str(e)}")
+                return False
+
+            progress_bar.progress((i + 1) / len(model_files))
+
+        status_placeholder.text("✅ All models loaded successfully!")
+        progress_bar.empty()
+        return True
+
+    except Exception as e:
+        st.error(f"❌ Error downloading models: {str(e)}")
+        return False
+
+# Download models on startup
+if not download_models():
+    st.error("⚠️ Failed to download models. Please check your internet connection and try again.")
+    st.stop()
 
 # =====================================================================
 # LOAD MODELS (WITH CACHING)
@@ -270,7 +353,7 @@ def predict_price(image_features, text_features, meta_models, scaler, ensemble_w
         return 0, 0, {}
 
 def draw_confidence_bar(confidence):
-    """Draw custom confidence bar (since st.gauge might not work)"""
+    """Draw custom confidence bar"""
     percentage = int(confidence)
     st.markdown(f"""
     <div style="margin: 10px 0;">
@@ -288,7 +371,7 @@ def draw_confidence_bar(confidence):
 # Header
 st.markdown("# 🏷️ Smart Product Pricing AI")
 st.markdown("**ML-Powered Price Prediction using Product Images & Descriptions**")
-st.markdown("*Powered by ResNet50 + Bi-LSTM + Ensemble Learning*")
+st.markdown("*Powered by ResNet50 + Ensemble Learning*")
 
 st.divider()
 
@@ -442,14 +525,18 @@ if predict_button:
         col_price, col_confidence = st.columns(2)
 
         with col_price:
-            st.metric(
-                "💰 Predicted Price",
-                f"${predicted_price:.2f}",
-                delta=f"Confidence: {confidence:.1f}%"
-            )
+            if predicted_price is not None and predicted_price > 0:
+                st.metric(
+                    "💰 Predicted Price",
+                    f"${predicted_price:.2f}",
+                    delta=f"Confidence: {confidence:.1f}%"
+                )
+            else:
+                st.error("❌ Could not generate prediction.")
 
         with col_confidence:
-            draw_confidence_bar(confidence)
+            if confidence > 0:
+                draw_confidence_bar(confidence)
 
         # Prediction breakdown
         if predictions_dict:
