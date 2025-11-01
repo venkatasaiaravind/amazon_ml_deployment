@@ -528,7 +528,7 @@ if predict_button:
             if predicted_price is not None and predicted_price > 0:
                 st.metric(
                     "💰 Predicted Price",
-                    f"${predicted_price:.2f}",
+                    f"र{predicted_price:.2f}",
                     delta=f"Confidence: {confidence:.1f}%"
                 )
             else:
@@ -549,9 +549,9 @@ if predict_button:
                 weighted = pred * weight
                 pred_data.append({
                     "Model": model_name.replace("_", " ").title(),
-                    "Prediction": f"${pred:.2f}",
+                    "Prediction": f"र{pred:.2f}",
                     "Weight": f"{weight*100:.0f}%",
-                    "Weighted": f"${weighted:.2f}"
+                    "Weighted": f"र{weighted:.2f}"
                 })
 
             pred_df = pd.DataFrame(pred_data)
