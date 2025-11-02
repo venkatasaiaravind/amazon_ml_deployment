@@ -58,23 +58,6 @@ st.markdown("""
         height: 100%;
         transition: width 0.3s ease;
     }
-    .disclaimer-box {
-        background-color: #fff3cd;
-        border-left: 4px solid #ffc107;
-        padding: 1.25rem;
-        border-radius: 0.5rem;
-        margin: 1rem 0;
-    }
-    .disclaimer-title {
-        color: #856404;
-        font-weight: bold;
-        margin-bottom: 0.5rem;
-    }
-    .disclaimer-text {
-        color: #856404;
-        font-size: 0.95rem;
-        line-height: 1.5;
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -381,22 +364,6 @@ def draw_confidence_bar(confidence):
     </div>
     """, unsafe_allow_html=True)
 
-def show_price_range_disclaimer():
-    """Display disclaimer about optimal price range"""
-    st.markdown("""
-    <div class="disclaimer-box">
-        <div class="disclaimer-title">⚠️ Model Optimal Price Range</div>
-        <div class="disclaimer-text">
-            <strong>This model works best for products priced between ₹10 - ₹50</strong> where it achieves high accuracy. 
-            While predictions can be made for products outside this range (minimum ₹1, maximum ₹500), 
-            confidence levels may be lower for products below ₹10 or above ₹50.
-            <br><br>
-            The model was trained on 72,288+ products, with the majority in the ₹10-₹50 price bracket. 
-            For optimal results, use this predictor for products within the recommended price range.
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
 # =====================================================================
 # MAIN APP LAYOUT
 # =====================================================================
@@ -405,11 +372,6 @@ def show_price_range_disclaimer():
 st.markdown("# 🏷️ Smart Product Pricing AI")
 st.markdown("**ML-Powered Price Prediction using Product Images & Descriptions**")
 st.markdown("*Powered by ResNet50 + Ensemble Learning*")
-
-st.divider()
-
-# Display disclaimer early
-show_price_range_disclaimer()
 
 st.divider()
 
@@ -425,11 +387,10 @@ with st.sidebar:
     **Performance:**
     - Final SMAPE: 62.95%
     - Training Data: 72,288 products
-    - Accuracy: High confidence range
-    
-    **Optimal Range:**
-    - Best Performance: ₹10 - ₹50
-    - Supported Range: ₹1 - ₹500
+    - **Price Range in Training Data:**
+      - Minimum: ₹1
+      - Maximum: ₹500
+      - Most Common: ₹10 - ₹50
     """)
 
     st.divider()
@@ -580,18 +541,6 @@ if predict_button:
             if confidence > 0:
                 draw_confidence_bar(confidence)
 
-        # Price range accuracy indicator
-        st.divider()
-        if predicted_price > 0:
-            if 10 <= predicted_price <= 50:
-                st.success("✅ **Prediction within optimal range (₹10-₹50)** - High confidence recommendation")
-            elif 1 <= predicted_price < 10:
-                st.warning("⚠️ **Prediction below optimal range (<₹10)** - Confidence may be lower than average")
-            elif 50 < predicted_price <= 500:
-                st.warning("⚠️ **Prediction above optimal range (>₹50)** - Confidence may be lower than average")
-            else:
-                st.error("❌ **Prediction outside supported range** - Result may be unreliable")
-
         # Prediction breakdown
         if predictions_dict:
             st.markdown("### 📊 Individual Model Predictions")
@@ -620,12 +569,15 @@ if predict_button:
             - Meta-Models: 6 ensemble methods combined
 
             **Training Specifications:**
-            - Dataset: 72,288 products
+            - Dataset: 72,288+ products
             - Cross-validation: 5-fold stratified
             - Final SMAPE: 62.95%
             - Input features: 43 dimensions
-            - **Optimal Price Range:** ₹10 - ₹50 (majority of training data)
-            - **Full Supported Range:** ₹1 - ₹500
+
+            **Training Data Price Distribution:**
+            - Minimum Price: ₹1
+            - Maximum Price: ₹500
+            - Most Common Range: ₹10 - ₹50 (majority of products)
 
             **Ensemble Weights:**
             - XGBoost: 40% (primary predictor)
@@ -654,8 +606,7 @@ st.markdown("""
 **Smart Product Pricing AI** | Built with Streamlit, PyTorch & Scikit-Learn  
 Developed by: aravind s | Final Year B.Tech Student
 
-Final SMAPE: 62.95% | Training Data: 72,288 products | Ensemble: 6 models  
-Optimal Price Range: ₹10 - ₹50 | Supported Range: ₹1 - ₹500
+Final SMAPE: 62.95% | Training Data: 72,288+ products | Ensemble: 6 models
 
 </div>
 """, unsafe_allow_html=True)
